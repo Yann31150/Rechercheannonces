@@ -1,0 +1,19 @@
+Madame/Monsieur [Nom du recruteur],
+
+Je me permets de vous adresser ma candidature pour le poste de Data Analyst au sein de votre équipe, car je suis convaincu que mes compétences et mon expérience en data science correspondent à vos attentes. Comme passionné par la data et l'analyse, j'ai toujours été attiré par les défis qui permettent d'améliorer les processus et de prendre des décisions éclairées grâce aux données.
+
+Dans ce cadre, je me vois particulièrement bien dans un rôle où je peux mettre en œuvre mes compétences en Python, SQL et Machine Learning pour analyser et interpréter les données, créer des dashboards interactifs et contribuer à la prise de décision stratégique. Ma formation au Wild Code School a permis de renforcer ma maîtrise de ces outils numériques, notamment Power BI, SQL, Python, Pandas et Modélisation OLAP.
+
+Mon expérience professionnelle en banque m'a également permis de développer une grande curiosité pour les données et des compétences solides en analyse financière et gestion de dossiers. J'ai travaillé sur divers projets tels que l'analyse juridique et gestion des successions, l'analyse financière et gestion des crédis, ainsi que la gestion des financements et des risques pour les entreprises. Ces expériences m'ont permis de développer une grande autonomie et un esprit analytique et méthodique.
+
+Je suis particulièrement attiré par cette offre car je vois l'opportunité de mettre en œuvre mes compétences dans un environnement dynamique et innovant. Je suis convaincu que ma passion pour la data science et mon expérience professionnelle me permettent de contribuer à l'amélioration des processus et à la prise de décision stratégique au sein de votre équipe.
+
+Je serais ravi de discuter plus en détail de mes compétences et de mon expérience avec vous. Je suis disponible pour un entretien à tout moment et je suis confiant que nous pourrons trouver ensemble les solutions pour améliorer vos processus.
+
+Merci de considérer ma candidature. Je reste à votre disposition pour toute question ou information supplémentaire.
+
+Cordialement,
+
+Yann Coignard
+06 79 86 96 11
+coignard.yann@hotmail.fr

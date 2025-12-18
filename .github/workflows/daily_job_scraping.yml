@@ -1,0 +1,72 @@
+name: Daily Job Scraping
+
+on:
+  schedule:
+    # Exécute tous les jours à 10h00 UTC (11h00 heure française en hiver, 12h00 en été)
+    - cron: '0 10 * * *'
+  workflow_dispatch:  # Permet de déclencher manuellement depuis GitHub
+
+jobs:
+  scrape-and-notify:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser chromium-chromedriver
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Set up Chrome/Chromium for Selenium
+      run: |
+        export CHROME_BIN=/usr/bin/chromium-browser
+        export CHROMEDRIVER_PATH=/usr/bin/chromedriver
+        echo "CHROME_BIN=$CHROME_BIN" >> $GITHUB_ENV
+        echo "CHROMEDRIVER_PATH=$CHROMEDRIVER_PATH" >> $GITHUB_ENV
+    
+    - name: Run daily scraping
+      env:
+        LINKEDIN_EMAIL: ${{ secrets.LINKEDIN_EMAIL }}
+        LINKEDIN_PASSWORD: ${{ secrets.LINKEDIN_PASSWORD }}
+        EMAIL_SMTP_SERVER: ${{ secrets.EMAIL_SMTP_SERVER }}
+        EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}
+        EMAIL_SMTP_USER: ${{ secrets.EMAIL_SMTP_USER }}
+        EMAIL_SMTP_PASSWORD: ${{ secrets.EMAIL_SMTP_PASSWORD }}
+        EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+        EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+      run: |
+        python scrape_jobs_airflow.py
+    
+    - name: Compare jobs and send email
+      env:
+        EMAIL_SMTP_SERVER: ${{ secrets.EMAIL_SMTP_SERVER }}
+        EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}
+        EMAIL_SMTP_USER: ${{ secrets.EMAIL_SMTP_USER }}
+        EMAIL_SMTP_PASSWORD: ${{ secrets.EMAIL_SMTP_PASSWORD }}
+        EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
+        EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+      run: |
+        python -c "from compare_jobs import get_new_jobs; from email_notifier import send_email; new_jobs, all_jobs = get_new_jobs(); send_email(new_jobs, len(all_jobs))"
+    
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: job-results
+        path: |
+          data/jobs.json
+          data/jobs_previous.json
+        retention-days: 30
+
