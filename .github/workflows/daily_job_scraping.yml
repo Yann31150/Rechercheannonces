@@ -2,8 +2,9 @@ name: Daily Job Scraping
 
 on:
   schedule:
-    # Exécute tous les jours à 10h00 UTC (11h00 heure française en hiver, 12h00 en été)
-    - cron: '0 10 * * *'
+    # Exécute du lundi au samedi à 10h00 UTC (11h00 heure française en hiver, 12h00 en été)
+    # Pas d'exécution le dimanche
+    - cron: '0 10 * * 1-6'  # 1=Lundi, 6=Samedi (0=Dimanche)
   workflow_dispatch:  # Permet de déclencher manuellement depuis GitHub
 
 jobs:
@@ -91,13 +92,30 @@ jobs:
         EMAIL_RECIPIENT: ${{ secrets.secret8 }}
       run: |
         python -c "
+        import datetime
+        from compare_jobs import get_new_jobs
+        from email_notifier import send_email
+        
         try:
-            from compare_jobs import get_new_jobs
-            from email_notifier import send_email
             new_jobs, all_jobs = get_new_jobs()
+            today = datetime.datetime.now()
+            is_saturday = today.weekday() == 5  # 5 = Samedi
+            
             print(f'✅ {len(new_jobs)} nouvelles offres, {len(all_jobs)} total')
-            send_email(new_jobs, len(all_jobs))
-            print('✅ Email envoyé')
+            print(f'📅 Jour: {today.strftime(\"%A\")} (Samedi={is_saturday})')
+            
+            # Le samedi, on envoie un email seulement s'il y a de nouvelles offres
+            if is_saturday:
+                if len(new_jobs) > 0:
+                    print('📧 Samedi avec nouvelles offres: envoi de l\\'email')
+                    send_email(new_jobs, len(all_jobs))
+                    print('✅ Email envoyé')
+                else:
+                    print('📧 Samedi sans nouvelles offres: pas d\\'email')
+            else:
+                # Du lundi au vendredi, on envoie toujours un email
+                send_email(new_jobs, len(all_jobs))
+                print('✅ Email envoyé')
         except Exception as e:
             print(f'❌ Erreur: {e}')
             import traceback
