@@ -22,7 +22,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y chromium-browser chromium-chromedriver
+        sudo apt-get install -y chromium-browser chromium-chromedriver chromium-driver
     
     - name: Install Python dependencies
       run: |
@@ -35,6 +35,14 @@ jobs:
         export CHROMEDRIVER_PATH=/usr/bin/chromedriver
         echo "CHROME_BIN=$CHROME_BIN" >> $GITHUB_ENV
         echo "CHROMEDRIVER_PATH=$CHROMEDRIVER_PATH" >> $GITHUB_ENV
+        # Vérifier que Chrome est installé
+        which chromium-browser || echo "Chrome non trouvé"
+        which chromedriver || echo "ChromeDriver non trouvé"
+    
+    - name: Create data directory
+      run: |
+        mkdir -p data
+        touch data/.gitkeep
     
     - name: Run daily scraping
       env:
@@ -46,8 +54,9 @@ jobs:
         EMAIL_SMTP_PASSWORD: ${{ secrets.EMAIL_SMTP_PASSWORD }}
         EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
         EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+        GITHUB_ACTIONS: 'true'
       run: |
-        python scrape_jobs_airflow.py
+        python scrape_jobs_airflow.py || echo "Scraping échoué mais on continue"
     
     - name: Compare jobs and send email
       env:
