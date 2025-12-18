@@ -17,46 +17,53 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
+        python-version: '3.11'  # Python 3.11 est plus stable que 3.13
     
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y wget gnupg
+        sudo apt-get install -y wget unzip
+    
+    - name: Install Chrome
+      run: |
         wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
         echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
         sudo apt-get update
         sudo apt-get install -y google-chrome-stable
-        CHROME_VERSION=$(google-chrome --version | cut -d " " -f3 | cut -d "." -f1)
-        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}")
+    
+    - name: Install ChromeDriver
+      run: |
+        CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+' | head -1 | cut -d. -f1)
+        CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}")
+        if [ -z "$CHROMEDRIVER_VERSION" ]; then
+          CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}")
+        fi
+        wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip" || \
         wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
-        unzip chromedriver_linux64.zip
-        sudo mv chromedriver /usr/local/bin/chromedriver
+        unzip -q chromedriver*.zip
+        sudo mv chromedriver*/chromedriver /usr/local/bin/chromedriver || sudo mv chromedriver /usr/local/bin/chromedriver
         sudo chmod +x /usr/local/bin/chromedriver
-        rm chromedriver_linux64.zip
+        rm -rf chromedriver* chromedriver*.zip
     
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt || pip install --no-cache-dir -r requirements.txt
-        # Vérifier les installations critiques
-        python -c "import selenium; print('Selenium OK')" || echo "Selenium manquant"
-        python -c "import bs4; print('BeautifulSoup OK')" || echo "BeautifulSoup manquant"
-    
-    - name: Set up Chrome for Selenium
-      run: |
-        export CHROME_BIN=/usr/bin/google-chrome
-        export CHROMEDRIVER_PATH=/usr/local/bin/chromedriver
-        echo "CHROME_BIN=$CHROME_BIN" >> $GITHUB_ENV
-        echo "CHROMEDRIVER_PATH=$CHROMEDRIVER_PATH" >> $GITHUB_ENV
-        # Vérifier que Chrome est installé
-        google-chrome --version || echo "Chrome non trouvé"
-        chromedriver --version || echo "ChromeDriver non trouvé"
+        pip install selenium beautifulsoup4 requests pandas numpy python-dotenv openpyxl webdriver-manager lxml colorama tabulate PyPDF2
+        # Vérifier les installations
+        python -c "import selenium; print('✅ Selenium installé')"
+        python -c "import bs4; print('✅ BeautifulSoup installé')"
     
     - name: Create data directory
       run: |
         mkdir -p data
         touch data/.gitkeep
+    
+    - name: Test Chrome and ChromeDriver
+      run: |
+        google-chrome --version
+        chromedriver --version
+        echo "CHROME_BIN=/usr/bin/google-chrome" >> $GITHUB_ENV
+        echo "CHROMEDRIVER_PATH=/usr/local/bin/chromedriver" >> $GITHUB_ENV
     
     - name: Run daily scraping
       env:
@@ -70,9 +77,11 @@ jobs:
         EMAIL_RECIPIENT: ${{ secrets.secret8 }}
         GITHUB_ACTIONS: 'true'
       run: |
-        python scrape_jobs_airflow.py || echo "Scraping échoué mais on continue"
+        python scrape_jobs_airflow.py 2>&1 | tee scraping.log
+        echo "Scraping terminé avec code: $?"
     
     - name: Compare jobs and send email
+      if: always()
       env:
         EMAIL_SMTP_SERVER: ${{ secrets.secret3 }}
         EMAIL_SMTP_PORT: ${{ secrets.secret4 }}
@@ -81,16 +90,27 @@ jobs:
         EMAIL_SENDER: ${{ secrets.secret7 }}
         EMAIL_RECIPIENT: ${{ secrets.secret8 }}
       run: |
-        python -c "from compare_jobs import get_new_jobs; from email_notifier import send_email; new_jobs, all_jobs = get_new_jobs(); send_email(new_jobs, len(all_jobs))"
+        python -c "
+        try:
+            from compare_jobs import get_new_jobs
+            from email_notifier import send_email
+            new_jobs, all_jobs = get_new_jobs()
+            print(f'✅ {len(new_jobs)} nouvelles offres, {len(all_jobs)} total')
+            send_email(new_jobs, len(all_jobs))
+            print('✅ Email envoyé')
+        except Exception as e:
+            print(f'❌ Erreur: {e}')
+            import traceback
+            traceback.print_exc()
+        "
     
-    - name: Upload results
-      uses: actions/upload-artifact@v4
+    - name: Upload results and logs
       if: always()
+      uses: actions/upload-artifact@v4
       with:
         name: job-results
         path: |
           data/jobs.json
           data/jobs_previous.json
+          scraping.log
         retention-days: 30
-
-# Workflow activé
