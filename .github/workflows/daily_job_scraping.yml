@@ -22,22 +22,36 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y chromium-browser chromium-chromedriver chromium-driver
+        sudo apt-get install -y wget gnupg
+        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        CHROME_VERSION=$(google-chrome --version | cut -d " " -f3 | cut -d "." -f1)
+        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}")
+        wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
+        unzip chromedriver_linux64.zip
+        sudo mv chromedriver /usr/local/bin/chromedriver
+        sudo chmod +x /usr/local/bin/chromedriver
+        rm chromedriver_linux64.zip
     
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r requirements.txt || pip install --no-cache-dir -r requirements.txt
+        # Vérifier les installations critiques
+        python -c "import selenium; print('Selenium OK')" || echo "Selenium manquant"
+        python -c "import bs4; print('BeautifulSoup OK')" || echo "BeautifulSoup manquant"
     
-    - name: Set up Chrome/Chromium for Selenium
+    - name: Set up Chrome for Selenium
       run: |
-        export CHROME_BIN=/usr/bin/chromium-browser
-        export CHROMEDRIVER_PATH=/usr/bin/chromedriver
+        export CHROME_BIN=/usr/bin/google-chrome
+        export CHROMEDRIVER_PATH=/usr/local/bin/chromedriver
         echo "CHROME_BIN=$CHROME_BIN" >> $GITHUB_ENV
         echo "CHROMEDRIVER_PATH=$CHROMEDRIVER_PATH" >> $GITHUB_ENV
         # Vérifier que Chrome est installé
-        which chromium-browser || echo "Chrome non trouvé"
-        which chromedriver || echo "ChromeDriver non trouvé"
+        google-chrome --version || echo "Chrome non trouvé"
+        chromedriver --version || echo "ChromeDriver non trouvé"
     
     - name: Create data directory
       run: |
