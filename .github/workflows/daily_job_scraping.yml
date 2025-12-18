@@ -46,26 +46,26 @@ jobs:
     
     - name: Run daily scraping
       env:
-        LINKEDIN_EMAIL: ${{ secrets.LINKEDIN_EMAIL }}
-        LINKEDIN_PASSWORD: ${{ secrets.LINKEDIN_PASSWORD }}
-        EMAIL_SMTP_SERVER: ${{ secrets.EMAIL_SMTP_SERVER }}
-        EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}
-        EMAIL_SMTP_USER: ${{ secrets.EMAIL_SMTP_USER }}
-        EMAIL_SMTP_PASSWORD: ${{ secrets.EMAIL_SMTP_PASSWORD }}
-        EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
-        EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+        LINKEDIN_EMAIL: ${{ secrets.secret1 }}
+        LINKEDIN_PASSWORD: ${{ secrets.secret2 }}
+        EMAIL_SMTP_SERVER: ${{ secrets.secret3 }}
+        EMAIL_SMTP_PORT: ${{ secrets.secret4 }}
+        EMAIL_SMTP_USER: ${{ secrets.secret5 }}
+        EMAIL_SMTP_PASSWORD: ${{ secrets.secret6 }}
+        EMAIL_SENDER: ${{ secrets.secret7 }}
+        EMAIL_RECIPIENT: ${{ secrets.secret8 }}
         GITHUB_ACTIONS: 'true'
       run: |
         python scrape_jobs_airflow.py || echo "Scraping échoué mais on continue"
     
     - name: Compare jobs and send email
       env:
-        EMAIL_SMTP_SERVER: ${{ secrets.EMAIL_SMTP_SERVER }}
-        EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}
-        EMAIL_SMTP_USER: ${{ secrets.EMAIL_SMTP_USER }}
-        EMAIL_SMTP_PASSWORD: ${{ secrets.EMAIL_SMTP_PASSWORD }}
-        EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
-        EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+        EMAIL_SMTP_SERVER: ${{ secrets.secret3 }}
+        EMAIL_SMTP_PORT: ${{ secrets.secret4 }}
+        EMAIL_SMTP_USER: ${{ secrets.secret5 }}
+        EMAIL_SMTP_PASSWORD: ${{ secrets.secret6 }}
+        EMAIL_SENDER: ${{ secrets.secret7 }}
+        EMAIL_RECIPIENT: ${{ secrets.secret8 }}
       run: |
         python -c "from compare_jobs import get_new_jobs; from email_notifier import send_email; new_jobs, all_jobs = get_new_jobs(); send_email(new_jobs, len(all_jobs))"
     
