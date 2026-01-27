@@ -25,26 +25,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y wget unzip
     
-    - name: Install Chrome
-      run: |
-        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable
-    
-    - name: Install ChromeDriver
-      run: |
-        CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+' | head -1 | cut -d. -f1)
-        CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}")
-        if [ -z "$CHROMEDRIVER_VERSION" ]; then
-          CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}")
-        fi
-        wget -q "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip" || \
-        wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
-        unzip -q chromedriver*.zip
-        sudo mv chromedriver*/chromedriver /usr/local/bin/chromedriver || sudo mv chromedriver /usr/local/bin/chromedriver
-        sudo chmod +x /usr/local/bin/chromedriver
-        rm -rf chromedriver* chromedriver*.zip
+    - name: Set up Chrome
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: stable
     
     - name: Install Python dependencies
       run: |
@@ -59,12 +43,10 @@ jobs:
         mkdir -p data
         touch data/.gitkeep
     
-    - name: Test Chrome and ChromeDriver
+    - name: Test Chrome
       run: |
         google-chrome --version
-        chromedriver --version
-        echo "CHROME_BIN=/usr/bin/google-chrome" >> $GITHUB_ENV
-        echo "CHROMEDRIVER_PATH=/usr/local/bin/chromedriver" >> $GITHUB_ENV
+        echo "CHROME_BIN=$(which google-chrome)" >> $GITHUB_ENV
     
     - name: Run daily scraping
       env:

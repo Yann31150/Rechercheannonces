@@ -58,7 +58,10 @@ def run_daily_scraping():
             
             return True, f"Scraping réussi: {len(jobs)} offres trouvées", len(jobs)
         else:
-            return False, "Aucune offre trouvée", 0
+            # Aucun résultat n'est pas une erreur : on sauvegarde un fichier vide
+            save_json([], config.JOBS_FILE)
+            print_info("ℹ️  Aucune offre trouvée aujourd'hui")
+            return True, "Aucune offre trouvée", 0
             
     except Exception as e:
         error_msg = f"Erreur lors du scraping: {str(e)}"
