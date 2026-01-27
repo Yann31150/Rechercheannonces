@@ -6,6 +6,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _get_int_env(name, default):
+    value = os.getenv(name, "")
+    try:
+        return int(value) if value else int(default)
+    except ValueError:
+        return int(default)
+
 # Credentials LinkedIn
 LINKEDIN_EMAIL = os.getenv('LINKEDIN_EMAIL', '')
 LINKEDIN_PASSWORD = os.getenv('LINKEDIN_PASSWORD', '')
@@ -94,7 +102,7 @@ YOUR_SKILLS = os.getenv('YOUR_SKILLS', 'Python, SQL, Machine Learning').split(',
 
 # Configuration Email pour les alertes
 EMAIL_SMTP_SERVER = os.getenv('EMAIL_SMTP_SERVER', 'smtp.gmail.com')
-EMAIL_SMTP_PORT = int(os.getenv('EMAIL_SMTP_PORT', '587'))
+EMAIL_SMTP_PORT = _get_int_env('EMAIL_SMTP_PORT', '587')
 EMAIL_SMTP_USER = os.getenv('EMAIL_SMTP_USER', '')
 EMAIL_SMTP_PASSWORD = os.getenv('EMAIL_SMTP_PASSWORD', '')  # Mot de passe d'application pour Gmail
 EMAIL_SENDER = os.getenv('EMAIL_SENDER', EMAIL_SMTP_USER)
